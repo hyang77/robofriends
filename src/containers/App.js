@@ -2,54 +2,49 @@ import React from "react";
 import CardList from "../components/CardList";
 import SearchBox from "../components/SearchBox";
 import Scroll from "../components/Scroll";
-import { robots } from "../robots";
+import { connect } from "react-redux";
+
+import { setSearchField, requestRobots } from "../action";
+
+const mapStateToProps = (state) => {
+  return {
+    searchField: state.searchRobots.searchField,
+    isPending: state.requestRobots.isPending,
+    robots: state.requestRobots.robots,
+    error: state.requestRobots.error
+  }
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleChange: (event) => dispatch(setSearchField(event.target.value)),
+    onRequestRobots: () => dispatch(requestRobots())
+  }
+}
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      robots: [],
-      searchfield: "",
-      error: null,
-      isLoaded: false,
-    };
-    this.handleChange = this.handleChange.bind(this);
-  }
-
   componentDidMount() {
-    fetch("https://jsonplaceholder.typicode.com/users")
-      .then((res) => res.json())
-      .then((users) => {
-        this.setState({ robots: users }, (error) => {
-          this.setState({
-            isLoaded: true,
-            error,
-          });
-        });
-      });
+    this.props.onRequestRobots()
   }
 
-  handleChange = (e) => {
-    this.setState({ searchfield: e.target.value });
-    console.log("Value from event:", e.target.value);
-  };
+
 
   render() {
-    const { error, isLoaded, robots, searchfield } = this.state; //destructuring
+    const { searchField, handleChange, robots, error, isPending} =  this.props;//destructuring
     const filteredRobots = robots.filter((robot) => {
       return robot.name
         .toLocaleLowerCase()
-        .includes(searchfield.toLocaleLowerCase());
+        .includes(searchField.toLocaleLowerCase());
     });
     if (error) {
       return <div>Error: {error.message}</div>;
-    } else if (!isLoaded) {
+    } else if (isPending) {
       return <div>Loading...</div>;
     } else {
       return (
         <div className="tc">
           <h1 className="f1">RoboFriends</h1>
-          <SearchBox handleChange={this.handleChange} />
+          <SearchBox handleChange={handleChange} />
           <Scroll>
             <CardList robots={filteredRobots} />
           </Scroll>
@@ -59,4 +54,4 @@ class App extends React.Component {
   }
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
